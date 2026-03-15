@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import DashboardLayout from '@/components/layout/DashboardLayout';
 import { RoutineBuilder } from '@/components/routine/RoutineBuilder';
 import { RoutineView } from '@/components/routine/RoutineView';
 import { useRoutine } from '@/hooks/useRoutine';
