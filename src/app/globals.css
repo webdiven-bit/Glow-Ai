@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 255, 245, 247;
+  --background-end-rgb: 255, 240, 245;
+}
+
+body {
+  color: var(--foreground-rgb);
+  background: linear-gradient(
+    to bottom,
+    rgb(var(--background-start-rgb)),
+    rgb(var(--background-end-rgb))
+  );
+  min-height: 100vh;
+}
