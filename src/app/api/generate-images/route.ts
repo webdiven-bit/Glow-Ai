@@ -6,7 +6,7 @@ export async function POST(request: Request) {
     const { productName, brand } = await request.json();
     
     // Generate a consistent color based on product name
-    const hash = productName.split('').reduce((a, b) => {
+    const hash = productName.split('').reduce((a: number, b: string) => {
       a = ((a << 5) - a) + b.charCodeAt(0);
       return a & a;
     }, 0);
