@@ -2,51 +2,27 @@
   "name": "glow-ai",
   "version": "1.0.0",
   "private": true,
-  "description": "AI-powered skincare analysis and cosmetics platform",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "lint": "next lint"
   },
   "dependencies": {
-    "next": "15.5.7",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "next": "15.1.7",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "framer-motion": "^11.0.0",
     "lucide-react": "^0.344.0",
-    "react-hot-toast": "^2.4.1",
-    "nodemailer": "^6.9.7",
-    "@vercel/blob": "^0.23.0",
-    "jwt-decode": "^4.0.0"
+    "react-hot-toast": "^2.4.1"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "@types/nodemailer": "^6.4.14",
-    "typescript": "^5",
-    "tailwindcss": "^3.4.17",
-    "postcss": "^8.4.49",
     "autoprefixer": "^10.4.20",
-    "eslint": "^8.57.1",
-    "eslint-config-next": "15.5.7",
-    "@tailwindcss/forms": "^0.5.7",
-    "@tailwindcss/typography": "^0.5.10",
-    "@tailwindcss/aspect-ratio": "^0.4.2"
-  },
-  "engines": {
-    "node": ">=18.17.0"
-  },
-  "keywords": [
-    "skincare",
-    "cosmetics",
-    "ai",
-    "nextjs",
-    "tailwindcss",
-    "typescript"
-  ],
-  "author": "Glow AI",
-  "license": "MIT"
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5"
+  }
 }
