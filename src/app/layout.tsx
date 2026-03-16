@@ -19,7 +19,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Prevent browser extensions from modifying the HTML */}
         <meta
           name="format-detection"
           content="telephone=no, date=no, email=no, address=no"
