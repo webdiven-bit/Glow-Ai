@@ -25,14 +25,6 @@ module.exports = {
           600: '#e11d48',
         },
       },
-      ringColor: {
-        pink: {
-          500: '#ec4899',
-        },
-      },
-      ringWidth: {
-        DEFAULT: '2px',
-      },
     },
   },
   plugins: [],
