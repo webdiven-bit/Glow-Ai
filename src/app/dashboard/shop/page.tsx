@@ -15,9 +15,34 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { PRODUCTS, categories, brands, priceRanges } from '@/data/products';
 
+// ============================================
+// TYPE DEFINITIONS
+// ============================================
+interface Product {
+  id: string;
+  name: string;
+  brand: string;
+  category: string;
+  subcategory?: string;
+  price: number;
+  originalPrice?: number;
+  rating?: number;
+  reviews?: number;
+  description?: string;
+  benefits?: string[];
+  image?: string;
+  inStock?: boolean;
+  store?: string;
+  url?: string;
+  tags?: string[];
+  skinTones?: string[];
+  undertones?: string[];
+  makeupStyle?: string[];
+}
+
 // ===== FILTER FUNCTION FOR MAKEUP RECOMMENDATIONS =====
-const getRecommendedProducts = (skinTone: string, undertone: string, makeupStyle: string) => {
-  return PRODUCTS.filter(product => {
+const getRecommendedProducts = (skinTone: string, undertone: string, makeupStyle: string): Product[] => {
+  return PRODUCTS.filter((product: Product) => {
     // Check if product matches skin tone (if specified)
     const matchesSkinTone = !product.skinTones || product.skinTones.includes(skinTone);
     
@@ -25,7 +50,7 @@ const getRecommendedProducts = (skinTone: string, undertone: string, makeupStyle
     const matchesUndertone = !product.undertones || product.undertones.includes(undertone);
     
     // Check if product matches makeup style
-    const matchesStyle = product.makeupStyle?.includes(makeupStyle);
+    const matchesStyle = !product.makeupStyle || product.makeupStyle.includes(makeupStyle);
     
     return matchesSkinTone && matchesUndertone && matchesStyle;
   });
@@ -49,7 +74,7 @@ export default function ShopPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [addedToCart, setAddedToCart] = useState<string | null>(null);
   const [wishlist, setWishlist] = useState<string[]>([]);
-  const [quickViewProduct, setQuickViewProduct] = useState<any>(null);
+  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [mounted, setMounted] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 30;
@@ -84,7 +109,7 @@ export default function ShopPage() {
 
   // Filter and sort products
   const filteredProducts = PRODUCTS
-    .filter(product => {
+    .filter((product: Product) => {
       // Search filter
       const matchesSearch = searchQuery === '' || 
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -112,7 +137,7 @@ export default function ShopPage() {
       
       return matchesSearch && matchesCategory && matchesBrand && matchesPrice && inStock;
     })
-    .sort((a, b) => {
+    .sort((a: Product, b: Product) => {
       switch (sortBy) {
         case 'price-low':
           return a.price - b.price;
@@ -134,7 +159,7 @@ export default function ShopPage() {
     setCurrentPage(1);
   }, [searchQuery, selectedCategory, selectedBrands, selectedPriceRange, sortBy]);
 
-  const handleAddToCart = (product: any) => {
+  const handleAddToCart = (product: Product) => {
     addToCart({
       id: product.id,
       name: product.name,
@@ -662,7 +687,7 @@ export default function ShopPage() {
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center hover:bg-pink-50 disabled:opacity-50 disabled:hover:bg-transparent"
+                  className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center hover:bg-pink-50 disabled:opacity-50"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
@@ -693,7 +718,7 @@ export default function ShopPage() {
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
-                  className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center hover:bg-pink-50 disabled:opacity-50 disabled:hover:bg-transparent"
+                  className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center hover:bg-pink-50 disabled:opacity-50"
                 >
                   <ChevronRight className="w-5 h-5" />
                 </button>
@@ -706,7 +731,7 @@ export default function ShopPage() {
           </div>
         </div>
 
-        {/* Quick View Modal - Simplified */}
+        {/* Quick View Modal */}
         <AnimatePresence>
           {quickViewProduct && (
             <motion.div
@@ -723,17 +748,33 @@ export default function ShopPage() {
                 className="bg-white rounded-2xl max-w-md w-full p-6"
                 onClick={e => e.stopPropagation()}
               >
-                <h3 className="text-xl font-bold mb-2">{quickViewProduct.name}</h3>
-                <p className="text-pink-500 font-bold text-2xl mb-4">₦{quickViewProduct.price.toLocaleString()}</p>
-                <button
-                  onClick={() => {
-                    handleAddToCart(quickViewProduct);
-                    setQuickViewProduct(null);
-                  }}
-                  className="w-full py-3 bg-pink-500 text-white rounded-xl"
-                >
-                  Add to Cart
-                </button>
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => setQuickViewProduct(null)}
+                    className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="text-center">
+                  <div className="w-32 h-32 bg-gradient-to-br from-pink-100 to-rose-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                    <span className="text-4xl">✨</span>
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">{quickViewProduct.name}</h3>
+                  <p className="text-pink-500 font-medium mb-2">{quickViewProduct.brand}</p>
+                  <p className="text-gray-600 text-sm mb-4">{quickViewProduct.description}</p>
+                  <p className="text-pink-500 font-bold text-2xl mb-4">₦{quickViewProduct.price.toLocaleString()}</p>
+                  <button
+                    onClick={() => {
+                      handleAddToCart(quickViewProduct);
+                      setQuickViewProduct(null);
+                    }}
+                    className="w-full py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                  >
+                    <ShoppingCart className="w-5 h-5" />
+                    Add to Cart
+                  </button>
+                </div>
               </motion.div>
             </motion.div>
           )}
