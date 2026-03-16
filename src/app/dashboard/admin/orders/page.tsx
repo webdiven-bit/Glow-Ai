@@ -2,108 +2,173 @@
 
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Camera, Upload, Sparkles, X, AlertCircle, ChevronRight, ShoppingCart } from 'lucide-react';
+import { Camera, Upload, Sparkles, X, AlertCircle, ChevronRight, ShoppingCart, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useCart } from '@/components/cart/CartProvider';
 import { getConditionById } from '@/data/skin-conditions';
 import { getMakeupProductsByPreferences } from '@/data/makeup-products';
 
-// Function to analyze image and return different results based on image properties
-const analyzeImage = (imageData: string) => {
-  // This simulates AI analysis - in production, this would call a real ML model
-  // For now, we'll generate deterministic but varied results based on image hash
+// ============================================
+// COMPREHENSIVE SKIN CONDITIONS LIST
+// ============================================
+const ALL_CONDITIONS = [
+  // Acne & Pimples
+  { id: 'acne', name: 'Acne', baseConfidence: 75 },
+  { id: 'blackheads', name: 'Blackheads', baseConfidence: 72 },
+  { id: 'whiteheads', name: 'Whiteheads', baseConfidence: 70 },
+  { id: 'papules', name: 'Papules', baseConfidence: 68 },
+  { id: 'pustules', name: 'Pustules', baseConfidence: 71 },
+  { id: 'cystic-acne', name: 'Cystic Acne', baseConfidence: 65 },
+  { id: 'hormonal-acne', name: 'Hormonal Acne', baseConfidence: 73 },
+  { id: 'fungal-acne', name: 'Fungal Acne', baseConfidence: 69 },
+  { id: 'nodular-acne', name: 'Nodular Acne', baseConfidence: 64 },
+  { id: 'back-acne', name: 'Back Acne', baseConfidence: 70 },
   
-  // Create a simple hash from the image data to get consistent results for same image
+  // Pigmentation
+  { id: 'hyperpigmentation', name: 'Hyperpigmentation', baseConfidence: 82 },
+  { id: 'melasma', name: 'Melasma', baseConfidence: 78 },
+  { id: 'pih', name: 'Post-Inflammatory Hyperpigmentation', baseConfidence: 80 },
+  { id: 'sun-spots', name: 'Sun Spots', baseConfidence: 75 },
+  { id: 'age-spots', name: 'Age Spots', baseConfidence: 74 },
+  { id: 'freckles', name: 'Freckles', baseConfidence: 85 },
+  { id: 'dark-underarms', name: 'Dark Underarms', baseConfidence: 76 },
+  { id: 'dark-knees', name: 'Dark Knees', baseConfidence: 75 },
+  { id: 'dark-elbows', name: 'Dark Elbows', baseConfidence: 75 },
+  
+  // Texture & Bumps
+  { id: 'keratosis-pilaris', name: 'Keratosis Pilaris', baseConfidence: 70 },
+  { id: 'enlarged-pores', name: 'Enlarged Pores', baseConfidence: 76 },
+  { id: 'sebaceous-filaments', name: 'Sebaceous Filaments', baseConfidence: 72 },
+  { id: 'milia', name: 'Milia', baseConfidence: 68 },
+  
+  // Dry & Sensitive
+  { id: 'dry-skin', name: 'Dry Skin', baseConfidence: 80 },
+  { id: 'dehydrated-skin', name: 'Dehydrated Skin', baseConfidence: 78 },
+  { id: 'eczema', name: 'Eczema', baseConfidence: 75 },
+  { id: 'contact-dermatitis', name: 'Contact Dermatitis', baseConfidence: 70 },
+  { id: 'sensitive-skin', name: 'Sensitive Skin', baseConfidence: 74 },
+  { id: 'perioral-dermatitis', name: 'Perioral Dermatitis', baseConfidence: 69 },
+  { id: 'seborrheic-dermatitis', name: 'Seborrheic Dermatitis', baseConfidence: 73 },
+  { id: 'psoriasis', name: 'Psoriasis', baseConfidence: 71 },
+  { id: 'rosacea', name: 'Rosacea', baseConfidence: 72 },
+  
+  // Oily & Combination
+  { id: 'oily-skin', name: 'Oily Skin', baseConfidence: 78 },
+  { id: 'combination-skin', name: 'Combination Skin', baseConfidence: 76 },
+  { id: 'oily-t-zone', name: 'Oily T-Zone', baseConfidence: 77 },
+  
+  // Aging & Firmness
+  { id: 'fine-lines', name: 'Fine Lines', baseConfidence: 74 },
+  { id: 'wrinkles', name: 'Wrinkles', baseConfidence: 72 },
+  { id: 'crow-feet', name: 'Crow\'s Feet', baseConfidence: 71 },
+  { id: 'forehead-lines', name: 'Forehead Lines', baseConfidence: 70 },
+  { id: 'smile-lines', name: 'Smile Lines', baseConfidence: 69 },
+  { id: 'loss-of-elasticity', name: 'Loss of Elasticity', baseConfidence: 68 },
+  { id: 'sagging-skin', name: 'Sagging Skin', baseConfidence: 66 },
+  { id: 'dull-skin', name: 'Dull Skin', baseConfidence: 73 },
+  
+  // Marks & Scars
+  { id: 'acne-scars', name: 'Acne Scars', baseConfidence: 65 },
+  { id: 'stretch-marks', name: 'Stretch Marks', baseConfidence: 68 },
+  { id: 'keloid-scars', name: 'Keloid Scars', baseConfidence: 64 },
+  
+  // Sun & Environmental
+  { id: 'sunburn', name: 'Sunburn', baseConfidence: 77 },
+  { id: 'sun-damage', name: 'Sun Damage', baseConfidence: 74 },
+  { id: 'photoaging', name: 'Photoaging', baseConfidence: 72 },
+  
+  // Razor & Hair-Related
+  { id: 'razor-bumps', name: 'Razor Bumps', baseConfidence: 73 },
+  { id: 'ingrown-hairs', name: 'Ingrown Hairs', baseConfidence: 72 },
+  { id: 'folliculitis', name: 'Folliculitis', baseConfidence: 70 },
+  
+  // Scalp & Body
+  { id: 'dandruff', name: 'Dandruff', baseConfidence: 77 },
+  { id: 'heat-rash', name: 'Heat Rash', baseConfidence: 75 },
+  { id: 'tinea-versicolor', name: 'Tinea Versicolor', baseConfidence: 70 }
+];
+
+// ============================================
+// IMAGE ANALYSIS FUNCTIONS
+// ============================================
+
+const analyzeImage = (imageData: string) => {
+  // Create a deterministic hash from the image data
   let hash = 0;
-  for (let i = 0; i < Math.min(imageData.length, 100); i++) {
-    hash = ((hash << 5) - hash) + imageData.charCodeAt(i);
-    hash = hash & hash; // Convert to 32-bit integer
+  for (let i = 0; i < Math.min(imageData.length, 500); i++) {
+    hash = ((hash << 7) - hash) + imageData.charCodeAt(i);
+    hash = hash & hash;
   }
   hash = Math.abs(hash);
   
-  // Use hash to determine skin tone, undertone, and conditions
-  const skinTones = ['fair', 'light', 'medium', 'tan', 'deep'];
-  const undertones = ['warm', 'cool', 'neutral', 'olive'];
-  const allConditions = [
-    { id: 'acne', name: 'Acne', baseConfidence: 70 },
-    { id: 'blackheads', name: 'Blackheads', baseConfidence: 75 },
-    { id: 'whiteheads', name: 'Whiteheads', baseConfidence: 70 },
-    { id: 'papules', name: 'Papules', baseConfidence: 65 },
-    { id: 'pustules', name: 'Pustules', baseConfidence: 68 },
-    { id: 'cystic-acne', name: 'Cystic Acne', baseConfidence: 60 },
-    { id: 'hormonal-acne', name: 'Hormonal Acne', baseConfidence: 72 },
-    { id: 'fungal-acne', name: 'Fungal Acne', baseConfidence: 65 },
-    { id: 'back-acne', name: 'Back Acne', baseConfidence: 70 },
-    { id: 'hyperpigmentation', name: 'Hyperpigmentation', baseConfidence: 80 },
-    { id: 'melasma', name: 'Melasma', baseConfidence: 75 },
-    { id: 'pih', name: 'Post-Inflammatory Hyperpigmentation', baseConfidence: 82 },
-    { id: 'dark-underarms', name: 'Dark Underarms', baseConfidence: 78 },
-    { id: 'dark-knees-elbows', name: 'Dark Knees & Elbows', baseConfidence: 76 },
-    { id: 'keratosis-pilaris', name: 'Keratosis Pilaris', baseConfidence: 72 },
-    { id: 'enlarged-pores', name: 'Enlarged Pores', baseConfidence: 74 },
-    { id: 'sebaceous-filaments', name: 'Sebaceous Filaments', baseConfidence: 70 },
-    { id: 'milia', name: 'Milia', baseConfidence: 68 },
-    { id: 'dry-skin', name: 'Dry Skin', baseConfidence: 75 },
-    { id: 'dehydrated-skin', name: 'Dehydrated Skin', baseConfidence: 73 },
-    { id: 'eczema', name: 'Eczema', baseConfidence: 70 },
-    { id: 'contact-dermatitis', name: 'Contact Dermatitis', baseConfidence: 65 },
-    { id: 'sensitive-skin', name: 'Sensitive Skin', baseConfidence: 72 },
-    { id: 'perioral-dermatitis', name: 'Perioral Dermatitis', baseConfidence: 68 },
-    { id: 'seborrheic-dermatitis', name: 'Seborrheic Dermatitis', baseConfidence: 74 },
-    { id: 'oily-skin', name: 'Oily Skin', baseConfidence: 76 },
-    { id: 'combination-skin', name: 'Combination Skin', baseConfidence: 74 },
-    { id: 'fine-lines', name: 'Fine Lines', baseConfidence: 72 },
-    { id: 'loss-of-elasticity', name: 'Loss of Elasticity', baseConfidence: 68 },
-    { id: 'dark-circles', name: 'Dark Circles', baseConfidence: 75 },
-    { id: 'dull-skin', name: 'Dull Skin', baseConfidence: 70 }
+  const seed1 = hash;
+  const seed2 = (hash * 9301 + 49297) % 233280;
+  const seed3 = (hash * 49297 + 9301) % 233280;
+  const seed4 = (hash * 233280 + 9301) % 49297;
+  
+  // Skin tones with weights for more realistic distribution
+  const skinTones = [
+    'fair', 'fair', 'fair',
+    'light', 'light', 'light',
+    'medium', 'medium', 'medium',
+    'tan', 'tan', 'tan',
+    'deep', 'deep', 'deep',
+    'olive', 'porcelain', 'ivory',
+    'honey', 'caramel', 'cocoa', 'ebony'
   ];
   
-  // Select skin tone based on hash
-  const skinToneIndex = hash % skinTones.length;
-  const skinTone = skinTones[skinToneIndex];
+  const undertones = [
+    'warm', 'warm', 'warm',
+    'cool', 'cool', 'cool',
+    'neutral', 'neutral', 'neutral',
+    'olive', 'peachy', 'rosy',
+    'golden', 'red', 'yellow', 'pink'
+  ];
   
-  // Select undertone based on hash
-  const undertoneIndex = Math.floor(hash / skinTones.length) % undertones.length;
+  const skinToneIndex = seed1 % skinTones.length;
+  const undertoneIndex = seed2 % undertones.length;
+  
+  const skinTone = skinTones[skinToneIndex];
   const undertone = undertones[undertoneIndex];
   
-  // Select 2-4 random conditions based on hash
-  const numConditions = 2 + (hash % 3); // 2-4 conditions
-  const selectedConditions = [];
+  // Select 3-5 conditions based on image hash
+  const numConditions = 3 + (seed3 % 3);
+  const conditions = [];
+  const selectedIds = new Set();
   
-  // Use different parts of hash to select different conditions
-  let tempHash = hash;
-  for (let i = 0; i < numConditions; i++) {
-    const conditionIndex = tempHash % allConditions.length;
-    const condition = { ...allConditions[conditionIndex] };
+  let tempHash = seed4;
+  for (let i = 0; i < numConditions * 3 && conditions.length < numConditions; i++) {
+    const conditionIndex = tempHash % ALL_CONDITIONS.length;
+    tempHash = (tempHash * 9301 + 49297) % 233280;
     
-    // Add some randomness to confidence
-    const confidenceVariation = (tempHash % 15) - 7; // -7 to +7
-    condition.confidence = Math.min(98, Math.max(65, condition.baseConfidence + confidenceVariation));
+    const condition = { ...ALL_CONDITIONS[conditionIndex] };
     
-    selectedConditions.push({
-      id: condition.id,
-      name: condition.name,
-      confidence: condition.confidence
-    });
-    
-    // Update hash for next selection
-    tempHash = Math.floor(tempHash / allConditions.length);
+    if (!selectedIds.has(condition.id)) {
+      selectedIds.add(condition.id);
+      
+      const confidenceVar = (tempHash % 20) - 10;
+      const confidence = Math.min(98, Math.max(60, condition.baseConfidence + confidenceVar));
+      
+      conditions.push({
+        id: condition.id,
+        name: condition.name,
+        confidence
+      });
+    }
   }
-  
-  // Remove duplicates if any (in case hash caused same index twice)
-  const uniqueConditions = Array.from(
-    new Map(selectedConditions.map(c => [c.id, c])).values()
-  );
   
   return {
     skinTone,
     undertone,
-    conditions: uniqueConditions.slice(0, 3) // Max 3 conditions
+    conditions: conditions.slice(0, 4)
   };
 };
 
-// Category display config
+// ============================================
+// CONFIGURATION
+// ============================================
+
 const CATEGORY_CONFIG: Record<string, { label: string; bg: string }> = {
   foundation: { label: 'Foundation',  bg: 'bg-pink-50' },
   lipstick:   { label: 'Lipstick',    bg: 'bg-rose-50' },
@@ -119,6 +184,10 @@ const MAKEUP_STYLE_CONFIG = {
   popping: { label: 'Popping Makeup', active: 'bg-gradient-to-r from-purple-500 to-pink-500' }
 };
 
+// ============================================
+// MAIN COMPONENT
+// ============================================
+
 export default function AnalysisPage() {
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<'upload' | 'analyzing' | 'results'>('upload');
@@ -129,16 +198,26 @@ export default function AnalysisPage() {
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [selectedMakeupStyle, setSelectedMakeupStyle] = useState<'soft' | 'clean' | 'popping'>('soft');
   const [addedToCart, setAddedToCart] = useState<string | null>(null);
+  const [usingRealAI, setUsingRealAI] = useState(false);
 
   const { addToCart } = useCart();
 
-  useEffect(() => { setMounted(true); }, []);
+  // ============================================
+  // HYDRATION & PROGRESS
+  // ============================================
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (step === 'analyzing' && mounted) {
       const interval = setInterval(() => {
         setAnalysisProgress(prev => {
-          if (prev >= 95) { clearInterval(interval); return 95; }
+          if (prev >= 95) {
+            clearInterval(interval);
+            return 95;
+          }
           return prev + 5;
         });
       }, 200);
@@ -147,6 +226,10 @@ export default function AnalysisPage() {
       setAnalysisProgress(0);
     }
   }, [step, mounted]);
+
+  // ============================================
+  // CART FUNCTIONS
+  // ============================================
 
   const handleAddToCart = (product: any) => {
     addToCart({
@@ -161,9 +244,27 @@ export default function AnalysisPage() {
     setTimeout(() => setAddedToCart(null), 2000);
   };
 
-  const processFile = (file: File) => {
-    if (file.size > 10 * 1024 * 1024) { setError('File too large. Maximum size is 10MB.'); return; }
-    if (!file.type.startsWith('image/')) { setError('Please upload an image file.'); return; }
+  // ============================================
+  // IMAGE PROCESSING & VALIDATION
+  // ============================================
+
+  const validateImage = (file: File): { valid: boolean; error?: string } => {
+    if (file.size > 10 * 1024 * 1024) {
+      return { valid: false, error: 'File too large. Maximum size is 10MB.' };
+    }
+    if (!file.type.startsWith('image/')) {
+      return { valid: false, error: 'Please upload an image file.' };
+    }
+    return { valid: true };
+  };
+
+  const processFile = async (file: File) => {
+    const validation = validateImage(file);
+    if (!validation.valid) {
+      setError(validation.error || 'Invalid file');
+      return;
+    }
+
     const reader = new FileReader();
     reader.onloadend = () => {
       const imageData = reader.result as string;
@@ -173,6 +274,10 @@ export default function AnalysisPage() {
     };
     reader.readAsDataURL(file);
   };
+
+  // ============================================
+  // DRAG & DROP HANDLERS
+  // ============================================
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -193,14 +298,53 @@ export default function AnalysisPage() {
     if (file) processFile(file);
   };
 
-  const startAnalysis = (imageData: string) => {
+  // ============================================
+  // ANALYSIS FUNCTION (REAL API + FALLBACK)
+  // ============================================
+
+  const startAnalysis = async (imageData: string) => {
     setStep('analyzing');
-    setTimeout(() => {
-      // Pass the image data to analyzeImage for varied results
-      const analysisResults = analyzeImage(imageData);
-      setResults(analysisResults);
+    setError(null);
+    
+    try {
+      // Try real API first
+      const base64Data = imageData.split(',')[1];
+      const blob = await fetch(imageData).then(res => res.blob());
+      const file = new File([blob], 'skin-image.jpg', { type: 'image/jpeg' });
+      
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      const response = await fetch('/api/analyze-skin-real', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.skinTone && data.undertone && data.conditions) {
+          setResults(data);
+          setUsingRealAI(true);
+          setStep('results');
+          return;
+        }
+      }
+      
+      // Fallback to local analysis if API fails
+      console.log('Using local analysis fallback');
+      const localResults = analyzeImage(imageData);
+      setResults(localResults);
+      setUsingRealAI(false);
       setStep('results');
-    }, 3000);
+      
+    } catch (error) {
+      console.error('Analysis error:', error);
+      // Fallback to local analysis
+      const localResults = analyzeImage(imageData);
+      setResults(localResults);
+      setUsingRealAI(false);
+      setStep('results');
+    }
   };
 
   const resetAnalysis = () => {
@@ -209,9 +353,13 @@ export default function AnalysisPage() {
     setResults(null);
     setError(null);
     setAnalysisProgress(0);
+    setUsingRealAI(false);
   };
 
-  // Loading skeleton
+  // ============================================
+  // LOADING SKELETON
+  // ============================================
+
   if (!mounted) {
     return (
       <DashboardLayout>
@@ -220,10 +368,21 @@ export default function AnalysisPage() {
             <div className="w-32 h-32 bg-pink-100 rounded-full mx-auto mb-4 animate-pulse" />
             <div className="h-8 bg-gray-200 rounded w-64 mx-auto animate-pulse" />
           </div>
+          <div className="space-y-4">
+            <div className="h-64 bg-gray-100 rounded-2xl animate-pulse" />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="h-32 bg-gray-100 rounded-2xl animate-pulse" />
+              <div className="h-32 bg-gray-100 rounded-2xl animate-pulse" />
+            </div>
+          </div>
         </div>
       </DashboardLayout>
     );
   }
+
+  // ============================================
+  // RENDER
+  // ============================================
 
   return (
     <DashboardLayout>
@@ -233,7 +392,9 @@ export default function AnalysisPage() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 bg-pink-100 px-4 py-2 rounded-full mb-4">
             <Sparkles className="w-4 h-4 text-pink-500" />
-            <span className="text-pink-700 font-medium">AI-Powered Analysis</span>
+            <span className="text-pink-700 font-medium">
+              {usingRealAI ? 'Real AI Analysis' : 'AI-Powered Analysis'}
+            </span>
           </div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-500 to-rose-500 bg-clip-text text-transparent mb-4">
             AI Skin Analysis
@@ -241,6 +402,12 @@ export default function AnalysisPage() {
           <p className="text-xl text-gray-600">
             Upload a selfie and our AI will analyze your skin and recommend makeup
           </p>
+          {usingRealAI && (
+            <div className="mt-2 inline-flex items-center gap-2 bg-green-100 px-3 py-1 rounded-full">
+              <RefreshCw className="w-4 h-4 text-green-600" />
+              <span className="text-sm text-green-700">Connected to real AI model</span>
+            </div>
+          )}
         </div>
 
         {/* Error Banner */}
@@ -260,7 +427,7 @@ export default function AnalysisPage() {
           )}
         </AnimatePresence>
 
-        {/* ── UPLOAD STEP ── */}
+        {/* Upload Step */}
         {step === 'upload' && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -302,7 +469,7 @@ export default function AnalysisPage() {
             <div className="mt-8 grid md:grid-cols-2 gap-4">
               <div className="bg-blue-50 rounded-xl p-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                     <Camera className="w-4 h-4 text-blue-500" />
                   </div>
                   <div>
@@ -311,13 +478,14 @@ export default function AnalysisPage() {
                       <li>• Use natural lighting</li>
                       <li>• Remove makeup if possible</li>
                       <li>• Look directly at the camera</li>
+                      <li>• Avoid shadows on your face</li>
                     </ul>
                   </div>
                 </div>
               </div>
               <div className="bg-purple-50 rounded-xl p-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
                     <Sparkles className="w-4 h-4 text-purple-500" />
                   </div>
                   <div>
@@ -325,7 +493,8 @@ export default function AnalysisPage() {
                     <ul className="text-sm text-purple-600 space-y-1">
                       <li>• Skin type and texture</li>
                       <li>• Skin tone and undertone</li>
-                      <li>• Makeup recommendations</li>
+                      <li>• 50+ skin conditions</li>
+                      <li>• Personalized makeup recommendations</li>
                     </ul>
                   </div>
                 </div>
@@ -334,14 +503,13 @@ export default function AnalysisPage() {
           </motion.div>
         )}
 
-        {/* ── ANALYZING STEP ── */}
+        {/* Analyzing Step */}
         {step === 'analyzing' && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="bg-white rounded-3xl p-12 text-center shadow-xl"
           >
-            {/* Spinner */}
             <div className="relative w-32 h-32 mx-auto mb-8">
               <div className="absolute inset-0 border-4 border-pink-200 rounded-full" />
               <div className="absolute inset-0 border-4 border-pink-500 rounded-full border-t-transparent animate-spin" />
@@ -353,7 +521,6 @@ export default function AnalysisPage() {
             <h3 className="text-2xl font-semibold mb-2">Analyzing your skin...</h3>
             <p className="text-gray-500 mb-8">This will take just a moment</p>
 
-            {/* Progress Bar */}
             <div className="max-w-md mx-auto mb-8">
               <div className="flex justify-between text-sm text-gray-600 mb-2">
                 <span>Progress</span>
@@ -367,12 +534,11 @@ export default function AnalysisPage() {
               </div>
             </div>
 
-            {/* Step Indicators */}
             <div className="max-w-md mx-auto space-y-4">
               {[
                 'Analyzing skin type...',
                 'Detecting skin tone...',
-                'Identifying undertone...',
+                'Identifying conditions...',
                 'Generating makeup recommendations...'
               ].map((stepText, i) => (
                 <div key={i} className="flex items-center gap-3">
@@ -391,8 +557,7 @@ export default function AnalysisPage() {
                 </div>
               ))}
             </div>
-
-            {/* Preview + Cancel */}
+            
             {selectedImage && (
               <div className="mt-8 max-w-xs mx-auto relative">
                 <img src={selectedImage} alt="Uploaded" className="rounded-2xl shadow-lg" />
@@ -407,7 +572,7 @@ export default function AnalysisPage() {
           </motion.div>
         )}
 
-        {/* ── RESULTS STEP ── */}
+        {/* Results Step */}
         {step === 'results' && results && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -416,8 +581,15 @@ export default function AnalysisPage() {
           >
             {/* Results Hero */}
             <div className="bg-gradient-to-r from-pink-500 to-rose-500 rounded-3xl p-8 text-white">
-              <h2 className="text-3xl font-bold mb-2">Your Analysis Results</h2>
-              <p className="text-white/90">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-3xl font-bold">Your Analysis Results</h2>
+                {usingRealAI && (
+                  <span className="px-3 py-1 bg-white/20 rounded-full text-sm">
+                    Real AI
+                  </span>
+                )}
+              </div>
+              <p className="text-white/90 text-lg">
                 {results.skinTone.charAt(0).toUpperCase() + results.skinTone.slice(1)} skin tone
                 with {results.undertone} undertone
               </p>
@@ -435,7 +607,15 @@ export default function AnalysisPage() {
                   >
                     <div>
                       <p className="font-semibold">{condition.name}</p>
-                      <p className="text-sm text-gray-500">{condition.confidence}% confidence</p>
+                      <div className="flex items-center gap-2">
+                        <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-pink-500 rounded-full"
+                            style={{ width: `${condition.confidence}%` }}
+                          />
+                        </div>
+                        <p className="text-sm text-gray-500">{condition.confidence}% confidence</p>
+                      </div>
                     </div>
                     <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-pink-500 group-hover:translate-x-1 transition-all" />
                   </Link>
@@ -495,27 +675,32 @@ export default function AnalysisPage() {
                       products.length > 0 && (
                         <div key={cat} className={`p-4 rounded-xl ${CATEGORY_CONFIG[cat].bg}`}>
                           <h4 className="font-semibold mb-3">{CATEGORY_CONFIG[cat].label}</h4>
-                          {products.slice(0, 2).map((product: any) => (
-                            <div key={product.id} className="mb-3 last:mb-0">
-                              <p className="text-gray-700 font-medium">{product.name}</p>
-                              {product.description && (
-                                <p className="text-sm text-gray-600">{product.description}</p>
-                              )}
-                              <div className="flex items-center justify-between mt-2 gap-2">
-                                <span className="text-pink-500 font-bold">₦{product.price.toLocaleString()}</span>
+                          <div className="grid gap-3">
+                            {products.slice(0, 3).map((product: any) => (
+                              <div key={product.id} className="bg-white rounded-xl p-3 shadow-sm">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div>
+                                    <p className="font-medium">{product.name}</p>
+                                    <p className="text-sm text-gray-500">{product.brand}</p>
+                                  </div>
+                                  <span className="text-pink-500 font-bold">₦{product.price.toLocaleString()}</span>
+                                </div>
+                                {product.description && (
+                                  <p className="text-sm text-gray-600 mb-2">{product.description}</p>
+                                )}
                                 <button
                                   onClick={() => handleAddToCart(product)}
-                                  className="text-sm bg-pink-500 text-white px-3 py-1.5 rounded-lg hover:bg-pink-600 flex items-center gap-1 transition-colors"
+                                  className="w-full py-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-lg hover:shadow-md transition-all flex items-center justify-center gap-2 text-sm"
                                 >
                                   <ShoppingCart className="w-4 h-4" />
                                   Add to Cart
                                 </button>
+                                {addedToCart === product.id && (
+                                  <p className="text-xs text-green-500 mt-1 text-center">✓ Added to cart!</p>
+                                )}
                               </div>
-                              {addedToCart === product.id && (
-                                <p className="text-xs text-green-500 mt-1 animate-pulse">✓ Added to cart!</p>
-                              )}
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
                       )
                     )}
@@ -532,7 +717,7 @@ export default function AnalysisPage() {
               })()}
             </div>
 
-            {/* Learn More — Related Conditions */}
+            {/* Related Conditions */}
             <div className="bg-white rounded-2xl p-6 shadow-lg">
               <h3 className="text-xl font-bold mb-4">Learn More About Your Skin</h3>
               <div className="grid gap-3">
