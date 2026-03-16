@@ -10,9 +10,30 @@ import { getConditionById } from '@/data/skin-conditions';
 import { getMakeupProductsByPreferences } from '@/data/makeup-products';
 
 // ============================================
+// TYPE DEFINITIONS
+// ============================================
+interface SkinCondition {
+  id: string;
+  name: string;
+  baseConfidence: number;
+}
+
+interface ConditionResult {
+  id: string;
+  name: string;
+  confidence: number;
+}
+
+interface AnalysisResult {
+  skinTone: string;
+  undertone: string;
+  conditions: ConditionResult[];
+}
+
+// ============================================
 // COMPREHENSIVE SKIN CONDITIONS LIST
 // ============================================
-const ALL_CONDITIONS = [
+const ALL_CONDITIONS: SkinCondition[] = [
   // Acne & Pimples
   { id: 'blackheads', name: 'Blackheads', baseConfidence: 75 },
   { id: 'whiteheads', name: 'Whiteheads', baseConfidence: 72 },
@@ -124,7 +145,7 @@ const ALL_CONDITIONS = [
 // ADVANCED IMAGE ANALYSIS FUNCTION
 // ============================================
 
-const analyzeImage = (imageData: string) => {
+const analyzeImage = (imageData: string): AnalysisResult => {
   // Create a more varied hash from the image data
   let hash = 0;
   const data = imageData.slice(0, 500); // Use first 500 chars for speed
@@ -152,7 +173,7 @@ const analyzeImage = (imageData: string) => {
   const seed4 = (combinedHash * 233280 + 9301) % 49297;
   
   // Expanded lists for more variety
-  const skinTones = [
+  const skinTones: string[] = [
     'fair', 'fair', 'fair', 
     'light', 'light', 'light',
     'medium', 'medium', 'medium', 
@@ -162,7 +183,7 @@ const analyzeImage = (imageData: string) => {
     'honey', 'caramel', 'cocoa', 'ebony'
   ];
   
-  const undertones = [
+  const undertones: string[] = [
     'warm', 'warm', 'warm',
     'cool', 'cool', 'cool',
     'neutral', 'neutral', 'neutral',
@@ -180,8 +201,8 @@ const analyzeImage = (imageData: string) => {
   
   // Select 3-5 random conditions based on different seeds
   const numConditions = 3 + (Math.abs(seed3) % 3); // 3-5 conditions
-  const selectedIds = new Set();
-  const conditions = [];
+  const selectedIds = new Set<string>();
+  const conditions: ConditionResult[] = [];
   
   // Use a different seed for each condition selection
   let conditionSeed = seed4;
@@ -209,7 +230,7 @@ const analyzeImage = (imageData: string) => {
   
   // If we don't have enough conditions, add some defaults
   if (conditions.length < 3) {
-    const defaults = [
+    const defaults: ConditionResult[] = [
       { id: 'hyperpigmentation', name: 'Hyperpigmentation', confidence: 85 },
       { id: 'fine-lines', name: 'Fine Lines', confidence: 78 },
       { id: 'enlarged-pores', name: 'Enlarged Pores', confidence: 82 },
@@ -260,7 +281,7 @@ const MAKEUP_STYLE_CONFIG = {
 export default function AnalysisPage() {
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<'upload' | 'analyzing' | 'results'>('upload');
-  const [results, setResults] = useState<any>(null);
+  const [results, setResults] = useState<AnalysisResult | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -742,7 +763,7 @@ export default function AnalysisPage() {
             <div className="bg-white rounded-2xl p-6 shadow-lg">
               <h3 className="text-xl font-bold mb-4">Detected Skin Conditions</h3>
               <div className="space-y-3">
-                {results.conditions.map((condition: any) => (
+                {results.conditions.map((condition) => (
                   <Link
                     key={condition.id}
                     href={`/dashboard/skin-conditions/${condition.id}`}
@@ -864,7 +885,7 @@ export default function AnalysisPage() {
             <div className="bg-white rounded-2xl p-6 shadow-lg">
               <h3 className="text-xl font-bold mb-4">Learn More About Your Skin</h3>
               <div className="grid gap-3">
-                {results.conditions.map((condition: any) => {
+                {results.conditions.map((condition) => {
                   const full = getConditionById(condition.id);
                   return full ? (
                     <Link
